@@ -12,6 +12,10 @@ class ApplicationAdmin(admin.ModelAdmin):
     }
     raw_id_fields = ("user", )
 
+    def get_queryset(self, request):
+        qs = super(ApplicationAdmin, self).get_queryset(request)
+        return qs.exclude(name="grant_by_account_password")
+
 
 class GrantAdmin(admin.ModelAdmin):
     list_display = ("code", "application", "user", "expires")
