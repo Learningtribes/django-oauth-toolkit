@@ -14,6 +14,7 @@ class ApplicationAdmin(admin.ModelAdmin):
 
     def get_queryset(self, request):
         qs = super(ApplicationAdmin, self).get_queryset(request)
+        raise KeyError
         return qs.exclude(name="grant_by_account_password")
 
 
