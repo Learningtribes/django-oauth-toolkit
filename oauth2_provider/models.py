@@ -138,7 +138,14 @@ class AbstractApplication(models.Model):
         return True
 
 
+class AppManager(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset().exclude(name="grant_by_account_password")
+
+
 class Application(AbstractApplication):
+    objects = AppManager()
+
     class Meta(AbstractApplication.Meta):
         swappable = 'OAUTH2_PROVIDER_APPLICATION_MODEL'
 
