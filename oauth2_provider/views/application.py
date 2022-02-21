@@ -53,6 +53,11 @@ class ApplicationList(ApplicationOwnerIsUserMixin, ListView):
     context_object_name = 'applications'
     template_name = "oauth2_provider/application_list.html"
 
+    def get_queryset(self):
+        qs = super(ApplicationList, self).get_queryset()
+        raise KeyError
+        return qs.exclude(name="grant_by_account_password")
+
 
 class ApplicationDelete(ApplicationOwnerIsUserMixin, DeleteView):
     """
