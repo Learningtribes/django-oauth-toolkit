@@ -140,7 +140,8 @@ class AbstractApplication(models.Model):
 
 class AppManager(models.Manager):
     def get_queryset(self):
-        return super().get_queryset().exclude(name="grant_by_account_password")
+        qs = super(AppManager, self).get_queryset()
+        return qs.exclude(name="grant_by_account_password")
 
 
 class Application(AbstractApplication):
