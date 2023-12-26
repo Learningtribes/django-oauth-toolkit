@@ -50,6 +50,24 @@ class OAuth2Validator(RequestValidator):
 
         return auth_string
 
+    def _check_secret(self, provided_secret, stored_secret):
+        """
+        Checks whether the provided client secret is valid.
+        Supports both hashed and unhashed secrets.
+        """
+        try:
+            key = settings.API_CREDENTIALS_KEY.encode()
+            cipher_suite = Fernet(key)
+            decrypted_secret = cipher_suite.decrypt(stored_secret)
+            # TODO: remove log below
+            print("---"*30)
+            print("     decrypted_secret: {}".format(decrypted_secret))
+            print("---"*30)
+
+            return False if decrypted_secret != provided_secret else True
+        except ValueError:  # Raised if the stored_secret is not hashed.
+            return constant_time_compare(provided_secret, stored_secret)
+
     def _authenticate_basic_auth(self, request):
         """
         Authenticates with HTTP Basic Auth.
@@ -88,7 +106,7 @@ class OAuth2Validator(RequestValidator):
         elif request.client.client_id != client_id:
             log.debug("Failed basic auth: wrong client id %s" % client_id)
             return False
-        elif request.client.client_secret != client_secret:
+        elif not self._check_secret(client_secret, request.client.client_secret):
             log.debug("Failed basic auth: wrong client secret %s" % client_secret)
             return False
         else:

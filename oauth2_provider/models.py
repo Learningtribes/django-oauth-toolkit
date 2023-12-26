@@ -16,6 +16,7 @@ from .settings import oauth2_settings
 from .compat import parse_qsl, reverse, urlparse
 from .generators import generate_client_secret, generate_client_id
 from .validators import validate_uris
+from cryptography.fernet import Fernet
 
 
 @python_2_unicode_compatible
@@ -136,6 +137,40 @@ class AbstractApplication(models.Model):
         :param request: The HTTP request being processed.
         """
         return True
+
+    @staticmethod
+    def encrypt_client_secret(client_secret):
+        key = settings.API_CREDENTIALS_KEY.encode()
+        # TODO: remove log below
+        print("    API_CREDENTIALS_KEY: {}".format(key))
+        cipher_suite = Fernet(key)
+        encrypted_secret = cipher_suite.encrypt(client_secret.encode())
+        return encrypted_secret
+
+    @staticmethod
+    def decrypt_client_secret(encrypted_secret):
+        key = settings.API_CREDENTIALS_KEY.encode()
+        cipher_suite = Fernet(key)
+        decrypted_secret = cipher_suite.decrypt(encrypted_secret)
+        return decrypted_secret.decode()
+
+    def save(self, *args, **kwargs):
+        if self.client_secret:
+            # I'ts necessary to check if client_secret was already encrypted
+            # try:
+            #     hasher = identify_hasher(self.client_secret)
+            #     return super(AbstractApplication, self).save(*args, **kwargs)
+            # except ValueError:
+            # TODO: remove log below
+            print("---"*30)
+            print("     client_secret: {}".format(self.client_secret))
+            hashed_secret = AbstractApplication.encrypt_client_secret(self.client_secret)
+            # TODO: remove log below
+            print("---"*30)
+            print("     hashed_secret: {}".format(hashed_secret))
+            self.client_secret = hashed_secret
+
+        return super(AbstractApplication, self).save(*args, **kwargs)
 
 
 class AppManager(models.Manager):
