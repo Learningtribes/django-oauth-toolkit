@@ -4,6 +4,7 @@ from datetime import timedelta
 
 from django.apps import apps
 from django.conf import settings
+from django.contrib.auth.hashers import identify_hasher, make_password
 from django.db import models, transaction
 from django.utils import timezone
 
@@ -136,6 +137,24 @@ class AbstractApplication(models.Model):
         :param request: The HTTP request being processed.
         """
         return True
+
+    def save(self, *args, **kwargs):
+        if self.client_secret:
+            # I'ts necessary to check if client_secret was already encrypted
+            try:
+                hasher = identify_hasher(self.client_secret)
+                return super(AbstractApplication, self).save(*args, **kwargs)
+            except ValueError:
+                # TODO: remove log below
+                print("---"*30)
+                print("     client_secret: {}".format(self.client_secret))
+                hashed_secret = make_password(self.client_secret)
+                # TODO: remove log below
+                print("---"*30)
+                print("     hashed_secret: {}".format(hashed_secret))
+                self.client_secret = hashed_secret
+
+        return super(AbstractApplication, self).save(*args, **kwargs)
 
 
 class AppManager(models.Manager):
